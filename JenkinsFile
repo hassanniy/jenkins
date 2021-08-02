@@ -4,10 +4,9 @@ pipeline {
       stage('Build Image') {
           agent {
             kubernetes {
-              label 'kaniko'
               idleMinutes 1
               yamlFile 'pods/build-pod.yaml'
-              defaultContainer 'kaniko'
+        
             }
           }
           steps {
@@ -25,10 +24,8 @@ pipeline {
       stage('Build Test Image') {
           agent {
             kubernetes {
-              label 'kaniko2'
               idleMinutes 1
               yamlFile 'pods/build-pod2.yaml'
-              defaultContainer 'kaniko2'
             }
           }
           steps {
@@ -46,10 +43,8 @@ pipeline {
       stage('Deploy to Dev') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
@@ -59,10 +54,8 @@ pipeline {
       stage('Run Test in Dev') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
@@ -77,10 +70,8 @@ pipeline {
       stage('Deploy to Test') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
@@ -90,10 +81,8 @@ pipeline {
       stage('Run Test in Test') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
@@ -108,10 +97,8 @@ pipeline {
       stage('Deploy to Prod') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
@@ -121,10 +108,8 @@ pipeline {
       stage('Run Test in Prod') {
           agent {
             kubernetes {
-              label 'kubectl'
               idleMinutes 10
               yamlFile 'pods/kubectl-pod.yaml'
-              defaultContainer 'kubectl'
             }
           }
           steps {
