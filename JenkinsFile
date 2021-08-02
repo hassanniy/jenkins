@@ -6,7 +6,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git url:'https://hassanniy@bitbucket.org/hassanniy/demo.git'        
+        git url:'https://github.com/hassanniy/jenkins.git'        
       }
     }
 
