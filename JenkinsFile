@@ -1,25 +1,148 @@
 pipeline {
-
-  agent any
-
-  stages {
-
-    stage('Checkout Source') {
-      steps {
-         git branch: 'main', credentialsId: '759d11e2-3343-4e34-bc5b-be332aaa996d', url: 'https://github.com/hassanniy/jenkins.git'
+    agent any
+    stages {
+      stage('Build Image') {
+          agent {
+            kubernetes {
+              label 'kaniko'
+              idleMinutes 1
+              yamlFile 'pods/build-pod.yaml'
+              defaultContainer 'kaniko'
+            }
+          }
+          steps {
+            sh '''
+              /kaniko/executor \
+                  --context=github.com/hassanniy/jenkins.git#refs/heads/master \
+                  --dockerfile=DockerfileHelloworld \
+                  --verbosity=debug \
+                  --cache=true \
+                  --insecure=true \
+                  --destination=registry.container-registry:5000/helloworld:latest
+            '''
+          }
+      }
+      stage('Build Test Image') {
+          agent {
+            kubernetes {
+              label 'kaniko2'
+              idleMinutes 1
+              yamlFile 'pods/build-pod2.yaml'
+              defaultContainer 'kaniko2'
+            }
+          }
+          steps {
+            sh '''
+              /kaniko/executor \
+                  --context=github.com/hassanniy/jenkins.git#refs/heads/master \
+                  --dockerfile=DockerfileHelloworldTest \
+                  --verbosity=debug \
+                  --cache=true \
+                  --insecure=true \
+                  --destination=registry.container-registry:5000/helloworldtest:latest
+            '''
+          }
+      }
+      stage('Deploy to Dev') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh "/usr/local/bin/kubectl apply -n helloworld-dev -f desc/helloworld.yaml"
+          }
+      }
+      stage('Run Test in Dev') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh '''
+            /usr/local/bin/kubectl apply -n helloworld-dev -f desc/helloworldtest.yaml
+            /usr/local/bin/kubectl wait -n helloworld-dev --for=condition=complete job/helloworldtest
+            /usr/local/bin/kubectl logs -n helloworld-dev job/helloworldtest
+            /usr/local/bin/kubectl delete -n helloworld-dev job/helloworldtest
+            '''
+          }
+      }
+      stage('Deploy to Test') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh "/usr/local/bin/kubectl apply -n helloworld-test -f desc/helloworld.yaml"
+          }
+      }
+      stage('Run Test in Test') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh '''
+            /usr/local/bin/kubectl apply -n helloworld-test -f desc/helloworldtest.yaml
+            /usr/local/bin/kubectl wait -n helloworld-test --for=condition=complete job/helloworldtest
+            /usr/local/bin/kubectl logs -n helloworld-test job/helloworldtest
+            /usr/local/bin/kubectl delete -n helloworld-test job/helloworldtest
+            '''
+          }
+      }
+      stage('Deploy to Prod') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh "/usr/local/bin/kubectl apply -n helloworld-prod -f desc/helloworld.yaml"
+          }
+      }
+      stage('Run Test in Prod') {
+          agent {
+            kubernetes {
+              label 'kubectl'
+              idleMinutes 10
+              yamlFile 'pods/kubectl-pod.yaml'
+              defaultContainer 'kubectl'
+            }
+          }
+          steps {
+            sh '''
+            /usr/local/bin/kubectl apply -n helloworld-prod -f desc/helloworldtest.yaml
+            /usr/local/bin/kubectl wait -n helloworld-prod --for=condition=complete job/helloworldtest
+            /usr/local/bin/kubectl logs -n helloworld-prod job/helloworldtest
+            /usr/local/bin/kubectl delete -n helloworld-prod job/helloworldtest
+            '''
+          }
       }
     }
+    post {
+        always {
+            emailext body: "${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}\n More info at: ${env.BUILD_URL}",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
+                subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}"
 
-    stage('Deploy App') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "nginx.yaml")
         }
-      }
     }
-
-  }
-
 }
-
-
