@@ -6,7 +6,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git 'https://github.com/hassanniy/jenkins.git'
+         git branch: 'main', credentialsId: '759d11e2-3343-4e34-bc5b-be332aaa996d', url: 'https://github.com/hassanniy/jenkins.git'
       }
     }
     stage('Build image') {
