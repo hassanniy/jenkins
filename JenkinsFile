@@ -12,7 +12,7 @@ pipeline {
           steps {
             sh '''
               /kaniko/executor \
-                  --context=github.com/hassanniy/jenkins.git#refs/heads/master \
+                  --context=git://github.com/hassanniy/jenkins.git#refs/heads/master \
                   --dockerfile=DockerfileHelloworld \
                   --verbosity=debug \
                   --cache=true \
@@ -31,7 +31,7 @@ pipeline {
           steps {
             sh '''
               /kaniko/executor \
-                  --context=github.com/hassanniy/jenkins.git#refs/heads/master \
+                  --context=git://github.com/hassanniy/jenkins.git#refs/heads/master \
                   --dockerfile=DockerfileHelloworldTest \
                   --verbosity=debug \
                   --cache=true \
